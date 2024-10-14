@@ -13,6 +13,7 @@ bot = telebot.TeleBot(telegram_token)
 user_data = {}
 eWeather = ("thunderstorm", "shower rain", "heavy snow", "shower snow", "tornado", "volcanic ash", "clear")
 
+#Check commentgot
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
