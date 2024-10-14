@@ -13,21 +13,31 @@ bot = telebot.TeleBot(telegram_token)
 user_data = {}
 eWeather = ("thunderstorm", "shower rain", "heavy snow", "shower snow", "tornado", "volcanic ash", "clear")
 
-#Check commentgot
-# Handle '/start' and '/help'
-@bot.message_handler(commands=['help', 'start'])
+@bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, """\
+    reply_message = """\
 Hi there, I am Weather Bot.
-I am here to report you the weather in your area and to alert if it is gonna ba dangerous. To start using the bot, you got to share your location\
-""")
+I am here to report you the weather in your area and to alert if it is gonna ba dangerous. To start using the bot, you have to share your current location.
+Please turn on GPS on your device, before doing so.
+If you need help use the '/help' command!\
+"""
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
     button = types.KeyboardButton('Share location', request_location=True)
 
     markup.add(button)
 
-    bot.send_message(message.chat.id, "Please share your location", reply_markup=markup)
+    bot.send_message(message.chat.id, reply_message, reply_markup=markup)
 
+@bot.message_handler(commands=["help"])
+def send_help(message):
+    help_message = """
+    Hello, I am a weather alert bot. My purpose is to inform you about the current and dangerous weathers in your area.
+To start using me, you will need to share your location first. After this, you will be able to request for the weather info.
+Besides that, every hour, I am going to automatically inform you about the current weather.
+Every 25 minutes, I check if a dangerous weather conditions are expected in your area, if so, I am going to inform you.
+Have a good day and be well!
+    """
+    bot.reply_to(message, help_message)
 
 @bot.message_handler(content_types=['location'])
 def save_info(message):
@@ -40,7 +50,14 @@ def save_info(message):
         'lon' : location.longitude,
     }
 
-    bot.send_message(message.chat.id, "We recieved your location, to update it, send it one more time")
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
+    update_button = types.KeyboardButton("Update location", request_location=True)
+    info_button = types.KeyboardButton("Get the weather")
+
+    markup.add(update_button)
+    markup.add(info_button)
+
+    bot.send_message(message.chat.id, "We recieved your location, to update it, press corresponding button\n To get info about the weather press the corresponding button", reply_markup=markup)
     print(user_data.items())
 
 def get_weather(lat, lon):
@@ -48,6 +65,20 @@ def get_weather(lat, lon):
     weather_report = requests.get(weather_url).json()
 
     return weather_report
+
+@bot.message_handler(func=lambda m: m.text == "Get the weather")
+def give_weather(message):
+    user_info = user_data[message.chat.id]
+    lat = user_info["lat"]
+    lon = user_info["lon"]
+
+    weather_report = get_weather(lat, lon)
+    weather_type = weather_report['weather'][0]['description']
+    temperature = weather_report['main']['temp']
+    windspeed = weather_report['wind']['speed']
+
+    bot.send_message(message.chat.id, f"Hello! Currently, it is {weather_type} in your area. Temperature is {temperature} by celcius. Wind speed is {windspeed}m/s. Have a nice day")
+
 
 def send_alert():
     if user_data:
@@ -74,7 +105,6 @@ def send_info():
             lon = data["lon"]
 
             weather_report = get_weather(lat, lon)
-            print(weather_report)
             weather_type = weather_report['weather'][0]['description']
             temperature = weather_report['main']['temp']
             windspeed = weather_report['wind']['speed']
