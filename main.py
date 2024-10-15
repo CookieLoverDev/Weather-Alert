@@ -1,4 +1,4 @@
-import telebot, os, requests
+import telebot, os, requests, sqlite3
 from telebot import types
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -11,7 +11,10 @@ telegram_token = os.getenv("TELEGRAM_API")
 bot = telebot.TeleBot(telegram_token)
 
 user_data = {}
+con = sqlite3.connect("weather_bot.db", check_same_thread=False)
+cur = con.cursor()
 eWeather = ("thunderstorm", "shower rain", "heavy snow", "shower snow", "tornado", "volcanic ash", "clear")
+
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -28,6 +31,7 @@ If you need help use the '/help' command!\
 
     bot.send_message(message.chat.id, reply_message, reply_markup=markup)
 
+
 @bot.message_handler(commands=["help"])
 def send_help(message):
     help_message = """
@@ -39,16 +43,22 @@ Have a good day and be well!
     """
     bot.reply_to(message, help_message)
 
+
 @bot.message_handler(content_types=['location'])
 def save_info(message):
     user_id = message.chat.id
     location = message.location
+
+    data = (user_id, message.from_user.first_name, location.latitude, location.longitude)
 
     user_data[user_id] = {
         'chat': message.chat.id,
         'lat' : location.latitude,
         'lon' : location.longitude,
     }
+
+    cur.execute("INSERT INTO users_data (chat_id, username, lat, lon) VALUES (?, ?, ?, ?)", data)
+    con.commit()
 
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
     update_button = types.KeyboardButton("Update location", request_location=True)
@@ -58,13 +68,14 @@ def save_info(message):
     markup.add(info_button)
 
     bot.send_message(message.chat.id, "We recieved your location, to update it, press corresponding button\n To get info about the weather press the corresponding button", reply_markup=markup)
-    print(user_data.items())
+
 
 def get_weather(lat, lon):
     weather_url = f'https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={weather_key}&units=metric'
     weather_report = requests.get(weather_url).json()
 
     return weather_report
+
 
 @bot.message_handler(func=lambda m: m.text == "Get the weather")
 def give_weather(message):
@@ -96,6 +107,7 @@ def send_alert():
             else:
                 continue
 
+
 def send_info():
     print("Going to send info")
     if user_data:
@@ -111,11 +123,13 @@ def send_info():
 
             bot.send_message(chat_id, f"Hello! Currently, it is {weather_type} in your area. Temperature is {temperature} by celcius. Wind speed is {windspeed}m/s. Have a nice day")
 
+
 def scheduler():
     scheduler = BackgroundScheduler()
     scheduler.add_job(send_alert, "interval", minutes = 25)
     scheduler.add_job(send_info, "interval", minutes = 60)
     scheduler.start()
+
 
 scheduler()
 bot.infinity_polling()
