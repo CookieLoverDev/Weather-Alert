@@ -1,3 +1,5 @@
 *.log
+*.db
 
 container.env
+test.py
