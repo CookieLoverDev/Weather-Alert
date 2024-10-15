@@ -10,7 +10,6 @@ telegram_token = os.getenv("TELEGRAM_API")
 
 bot = telebot.TeleBot(telegram_token)
 
-user_data = {}
 con = sqlite3.connect("weather_bot.db", check_same_thread=False)
 cur = con.cursor()
 eWeather = ("thunderstorm", "shower rain", "heavy snow", "shower snow", "tornado", "volcanic ash", "clear")
@@ -51,14 +50,14 @@ def save_info(message):
 
     data = (user_id, message.from_user.first_name, location.latitude, location.longitude)
 
-    user_data[user_id] = {
-        'chat': message.chat.id,
-        'lat' : location.latitude,
-        'lon' : location.longitude,
-    }
-
-    cur.execute("INSERT INTO users_data (chat_id, username, lat, lon) VALUES (?, ?, ?, ?)", data)
-    con.commit()
+    check = cur.execute("SELECT * FROM users_data WHERE chat_id = ?", (user_id, ))
+    check = check.fetchall()
+    if check:
+        cur.execute("UPDATE users_data SET username = ?, lat = ?, lon = ? WHERE chat_id = ?", (*data[1:], data[0]))
+        con.commit()
+    else:
+        cur.execute("INSERT INTO users_data (chat_id, username, lat, lon) VALUES (?, ?, ?, ?)", data)
+        con.commit()
 
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=False, resize_keyboard=True)
     update_button = types.KeyboardButton("Update location", request_location=True)
@@ -67,7 +66,7 @@ def save_info(message):
     markup.add(update_button)
     markup.add(info_button)
 
-    bot.send_message(message.chat.id, "We recieved your location, to update it, press corresponding button\n To get info about the weather press the corresponding button", reply_markup=markup)
+    bot.send_message(message.chat.id, "We recieved your location, to update it, press corresponding button\nTo get info about the weather press the corresponding button", reply_markup=markup)
 
 
 def get_weather(lat, lon):
@@ -79,25 +78,34 @@ def get_weather(lat, lon):
 
 @bot.message_handler(func=lambda m: m.text == "Get the weather")
 def give_weather(message):
-    user_info = user_data[message.chat.id]
-    lat = user_info["lat"]
-    lon = user_info["lon"]
+    data = cur.execute("SELECT * FROM users_data WHERE chat_id = ?", (message.chat.id, ))
+    data = data.fetchall()
+    con.commit()
+    data = data[0]
+
+    username = data[1]
+    lat = data[2]
+    lon = data[3]
 
     weather_report = get_weather(lat, lon)
     weather_type = weather_report['weather'][0]['description']
     temperature = weather_report['main']['temp']
     windspeed = weather_report['wind']['speed']
 
-    bot.send_message(message.chat.id, f"Hello! Currently, it is {weather_type} in your area. Temperature is {temperature} by celcius. Wind speed is {windspeed}m/s. Have a nice day")
+    bot.send_message(message.chat.id, f"Hello, {username}! Currently, it is {weather_type} in your area. Temperature is {temperature} by celcius. Wind speed is {windspeed}m/s. Have a nice day")
 
 
 def send_alert():
-    if user_data:
-        for user_id, data in user_data.items():
-            chat_id = data["chat"]
-            lat = data["lat"]
-            lon = data["lon"]
+    data = cur.execute("SELECT * FROM users_data")
+    data = data.fetchall()
+    con.commit()
 
+    if data:
+        for unit in data:
+            user = unit
+            chat_id = user[0]
+            lat = user[2]
+            lon = user[3]
             weather_report = get_weather(lat, lon)
             weather_type = weather_report['weather'][0]['main'].lower()
             weather_desc = weather_report['weather'][0]['description'].lower()
@@ -109,19 +117,24 @@ def send_alert():
 
 
 def send_info():
-    print("Going to send info")
-    if user_data:
-        for user_id, data in user_data.items():
-            chat_id = data["chat"]
-            lat = data["lat"]
-            lon = data["lon"]
+    data = cur.execute("SELECT * FROM users_data")
+    data = data.fetchall()
+    con.commit()
+
+    if data:
+        for unit in data:
+            user = unit
+            chat_id = user[0]
+            username = user[1]
+            lat = user[2]
+            lon = user[3]
 
             weather_report = get_weather(lat, lon)
             weather_type = weather_report['weather'][0]['description']
             temperature = weather_report['main']['temp']
             windspeed = weather_report['wind']['speed']
 
-            bot.send_message(chat_id, f"Hello! Currently, it is {weather_type} in your area. Temperature is {temperature} by celcius. Wind speed is {windspeed}m/s. Have a nice day")
+            bot.send_message(chat_id, f"Hello, {username}! Currently, it is {weather_type} in your area. Temperature is {temperature} by celcius. Wind speed is {windspeed}m/s. Have a nice day")
 
 
 def scheduler():
