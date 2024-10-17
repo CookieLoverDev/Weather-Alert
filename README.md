@@ -12,24 +12,24 @@ All the information about the user(their username, chat id and location) is stor
 To start using the script, firtst you need to get API keys from OpenWeather and create a Telegram bot.
 <bold>How to get Telegram API?</bold> To make a bot in telegram and get api key for it, you will need to use
 BotFather. Just use the start command and follow the instructions.
-
+<br>
 <img src="/Media/Screenshot 2024-10-18 005412.png" />
-
+<br>
 <bold>How to get OpenWeahter API?</bold> To make an API key from OpenWeather, so you will be able to make calls
 to the website to get weather information, you just need to go their website and register. After registration they
 will give you an API key for free use.
-
+<br>
 <img src="/Media/Screenshot 2024-10-18 012102.png" />
-
+<br>
 After acquiring the API keys, you need to make an .env file and write down API keys there, name the file "container.env"
 and API keys like in below
-
+<br>
 <img src="/Media/Screenshot 2024-10-18 012757.png" />
-
+<br>
 After this, run the "dbs.py" to initialize the database, where the data is going to be stored
-
+<br>
 <img src="/Media/Screenshot 2024-10-18 013336.png">
-
+<br>
 Finally, you ca run the main code, and it should work properly
 
 <bold>Note:</bold>you might need to download some libraries
