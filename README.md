@@ -46,7 +46,7 @@ After this, run the "dbs.py" to initialize the database, where the data is going
 
 Finally, you ca run the main code, and it should work properly
 
-<strong>Note:</strong>you might need to download some libraries
+<strong>Note:</strong> you might need to download some libraries
 
 <h1>Technologies used</h1>
 Technological technologies
