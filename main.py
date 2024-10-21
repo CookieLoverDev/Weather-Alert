@@ -12,7 +12,7 @@ bot = telebot.TeleBot(telegram_token)
 
 con = sqlite3.connect("weather_bot.db", check_same_thread=False)
 cur = con.cursor()
-eWeather = ("thunderstorm", "shower rain", "heavy snow", "shower snow", "tornado", "volcanic ash", "clear")
+eWeather = ("thunderstorm", "shower rain", "heavy snow", "shower snow", "tornado", "volcanic ash")
 
 
 @bot.message_handler(commands=['start'])
@@ -87,12 +87,17 @@ def give_weather(message):
     lat = data[2]
     lon = data[3]
 
+    
     weather_report = get_weather(lat, lon)
     weather_type = weather_report['weather'][0]['description']
     temperature = weather_report['main']['temp']
     windspeed = weather_report['wind']['speed']
+    weather_icon = weather_report['weather'][0]['icon']
+    url = f"https://openweathermap.org/img/wn/{weather_icon}@2x.png"
 
+    bot.send_photo(message.chat.id, url)
     bot.send_message(message.chat.id, f"Hello, {username}! Currently, it is {weather_type} in your area. Temperature is {temperature} by celcius. Wind speed is {windspeed}m/s. Have a nice day")
+    
 
 
 def send_alert():
@@ -133,7 +138,10 @@ def send_info():
             weather_type = weather_report['weather'][0]['description']
             temperature = weather_report['main']['temp']
             windspeed = weather_report['wind']['speed']
+            weather_icon = weather_report['weather'][0]['icon']
+            url = f"https://openweathermap.org/img/wn/{weather_icon}@2x.png"
 
+            bot.send_photo(chat_id, url)
             bot.send_message(chat_id, f"Hello, {username}! Currently, it is {weather_type} in your area. Temperature is {temperature} by celcius. Wind speed is {windspeed}m/s. Have a nice day")
 
 
@@ -146,3 +154,4 @@ def scheduler():
 
 scheduler()
 bot.infinity_polling()
+
