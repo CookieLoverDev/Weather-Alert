@@ -10,6 +10,8 @@ All the information about the user(their username, chat id and location) is stor
 <h1>Usage</h1>
 
 To start using the script, firtst you need to get API keys from OpenWeather and create a Telegram bot.
+
+
 <strong>How to get Telegram API?</strong> To make a bot in telegram and get api key for it, you will need to use
 BotFather. Just use the start command and follow the instructions.
 
