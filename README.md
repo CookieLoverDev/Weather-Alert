@@ -48,7 +48,4 @@ Finally, you ca run the main code, and it should work properly
 
 <strong>Note:</strong> you might need to download some libraries
 
-<h1>Technologies used</h1>
-Technological technologies
-
-Frame processing
+Note: Project is finished, no updates any soon
